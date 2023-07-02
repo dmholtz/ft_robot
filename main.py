@@ -200,58 +200,16 @@ time.sleep(2)
 robot_arm.pos([45, 120, 70, 135, 135, 20])
 time.sleep(2)
 
-#time.sleep(1)
-#robot_arm.axis1.blocking_pos(90)
-
-#time.sleep(1)
-#robot_arm.axis2.blocking_pos(90)
-#
-#time.sleep(1)
-#robot_arm.axis3.blocking_pos(90)
-
-robot_arm.axis4.blocking_pos(90)
-robot_arm.axis5.blocking_pos(90)
-robot_arm.axis6.blocking_pos(-90)
-
-time.sleep(0.5)
-
-for x,y,z in zip(range(90,270), range(90,270), range(-90,90)):
+for x,y,z in zip(range(95,265), range(95,265), range(-85,85)):
     for i in range(4):
         time.sleep(0.001)
         robot_arm.axis4.blocking_pos(x+i/4)
         robot_arm.axis5.blocking_pos(y+i/4)
         robot_arm.axis6.blocking_pos(z+i/4)
 
-time.sleep(1)
-robot_arm.axis4.blocking_pos(180)
 
-time.sleep(1)
-robot_arm.axis5.blocking_pos(240)
-
-time.sleep(1)
-robot_arm.axis5.blocking_pos(180)
-
-time.sleep(1)
-robot_arm.axis6.blocking_pos(45)
-
-time.sleep(1)
-robot_arm.axis6.blocking_pos(0)
 
 #robot_arm.axis1.async_home()
 #while robot_arm.axis1.is_running:
 #    pass
 #robot_arm.axis1.limit_switch.remove_change_listener("closed", lambda x: print(x))
-
-
-TXT_M_M1_encodermotor.set_speed(int(512), Motor.CW)
-TXT_M_M1_encodermotor.set_distance(int(axis1_degree_to_steps(90)))
-while not (not TXT_M_M1_encodermotor.is_running()):
-    print(TXT_M_C1_motor_step_counter.get_count())
-
-time.sleep(1)
-#
-#TXT_M_M1_encodermotor.set_speed(int(512), Motor.CCW)
-#TXT_M_M1_encodermotor.set_distance(int(axis1_degree_to_steps(45)))
-#while not (not TXT_M_M1_encodermotor.is_running()):
-#    print(TXT_M_C1_motor_step_counter.get_count())
-#TXT_M_M1_encodermotor.stop_sync()
