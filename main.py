@@ -1,4 +1,6 @@
 import time
+import math
+import numpy as np
 
 from typing import List, Tuple
 from fischertechnik.controller.Motor import Motor
@@ -135,8 +137,50 @@ class ServoAxis:
 
 class Kinematic:
 
+    # lengths (unit: mm)
+    l_1 = 92.5
+    l_2 = 150
+    l_4 = 140
+    l_5 = 67.5
+    l_6 = 33
+
+    # vectors
+    p_01 = np.array([0,0,l_1])
+
     def __init__(self):
-        pass
+        self.d_6 = self.l_5+self.l_6
+
+    def backward(self, tcp, tcp_n) -> List[float]:
+        
+        p_04 = tcp - tcp_n*self.d_6
+
+        # add pi to reach preferred orientation of second joint 
+        q_1 = math.atan2(p_04[1], p_04[0]) + math.pi
+        print("q_1:", q_1/2/math.pi*360)
+
+        p_14 = p_04 - self.p_01
+        l_14 = np.linalg.norm(p_14)
+
+        q_3_prime = math.acos((self.l_2**2 + self.l_4**2 - l_14**2)/(2*self.l_2*self.l_4))
+        q_3 = math.pi - q_3_prime
+        print("q_3:", q_3/2/math.pi*360)
+
+        q_2_prime = math.asin(p_14[2]/l_14)
+        print(q_2_prime/2/math.pi*360)
+        q_2_prime_prime = math.acos((self.l_2**2 + l_14**2 - self.l_4**2)/(2*self.l_2*l_14))
+        print(q_2_prime_prime/2/math.pi*360)
+        q_2 = math.pi - q_2_prime - q_2_prime_prime
+        print("q_2:", q_2/2/math.pi*360)
+
+        q_4 = math.pi
+        q_5_prim = 6/4*math.pi - q_2_prime - q_2_prime_prime - q_3_prime
+        q_5 = 2*math.pi-q_5_prim
+        q_6 = 0
+
+        q = [q_1, q_2, q_3, q_4, q_5, q_6] # radian
+        radian_to_degree = lambda rad: rad / 2 / math.pi * 360
+        return [deg for deg in map(radian_to_degree, q)]
+
 
 
 class RobotArm:
@@ -189,16 +233,30 @@ class RobotArm:
             axis.async_pos(phi_i)
 
         while not all(axis.poll_axis() for axis in self.axes):
-            pass  
+            pass
+
+k = Kinematic()
+
+q = k.backward([-150,-150,60], np.array([0,0,-1]))
+print(q)
+
+assert False
 
 
 robot_arm = RobotArm()
 robot_arm.reference()
 time.sleep(1)
 robot_arm.home()
+time.sleep(1)
+#robot_arm.pos(q)
+#assert False
+for i in range(90,-1,-10):
+    q = k.backward([-150,-150,i], np.array([0,0,-1]))
+    robot_arm.pos(q)
+#robot_arm.pos([45, 120, 70, 135, 135, 20])
 time.sleep(2)
-robot_arm.pos([45, 120, 70, 135, 135, 20])
-time.sleep(2)
+
+assert False
 
 for x,y,z in zip(range(95,265), range(95,265), range(-85,85)):
     for i in range(4):
