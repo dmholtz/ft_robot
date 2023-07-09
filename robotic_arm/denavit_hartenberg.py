@@ -25,7 +25,7 @@ class DenavitHartenbergMatrix:
         self.phi = phi
 
     def homogeneous_matrix(self, phi: float) -> np.ndarray:
-        """Returns the homogeneous matrix that transforms coordinates of K_j into
+        """Returns the homogeneous 4x4 matrix that transforms coordinates of K_j into
         coordinates of K_i.
         """
         return np.array([
