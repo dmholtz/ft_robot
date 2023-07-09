@@ -2,8 +2,9 @@ import time
 import math
 import numpy as np
 
-from kinematic import Kinematic
-from robot import RobotArm
+from robotic_arm.kinematic import Kinematic
+from robotic_arm.robot import RobotArm
+from robotic_arm.transform import Transform
 
 k = Kinematic()
 robot_arm = RobotArm()
@@ -14,18 +15,12 @@ time.sleep(1)
 robot_arm.home()
 time.sleep(1)
 
-q = k.backward([-150,-150,60], np.array([0,0,-1]))
+tf = Transform().rotate_x(3/4*math.pi).translate([-150, -150, 60])
+q = k.backward(tf)
 robot_arm.pos(q)
 time.sleep(1)
 
-q = k.backward([-150,-150,60], np.array([-math.sqrt(2)/2,0,-math.sqrt(2)/2]))
-robot_arm.pos(q)
-time.sleep(1)
-
-for i in range(0,101,5):
-    x = -math.sqrt(2)/2 + i/100 * math.sqrt(2)/2
-    y = 0 - i/100 * math.sqrt(2)/2
-    tcp_n = np.array([x,y,-math.sqrt(2)/2])
-    tcp_n /= np.linalg.norm(tcp_n)
-    q = k.backward([-150,-150,60], tcp_n)
+for i in range(0,101,10):
+    tf = Transform().rotate_x((3/4+1/4*i/100)*math.pi).rotate_y(-math.pi/4*i/100).translate([-150, -150, 60])
+    q = k.backward(tf)
     robot_arm.pos(q)

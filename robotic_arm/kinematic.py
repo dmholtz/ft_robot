@@ -4,6 +4,7 @@ import math
 from typing import List
 
 from robotic_arm.denavit_hartenberg import DenavitHartenbergMatrix
+from robotic_arm.transform import Transform
 
 class Kinematic:
 
@@ -25,14 +26,10 @@ class Kinematic:
         self.dh_1_2 = DenavitHartenbergMatrix(d=0, a=self.l_2, alpha=0)
         self.dh_2_3 = DenavitHartenbergMatrix(d=0, a=0, alpha=math.pi/2)
 
-        mat = np.matmul(self.dh_0_1.homogeneous_matrix(0), self.dh_1_2.homogeneous_matrix(2/3*math.pi))
-        mat = np.matmul(mat, self.dh_2_3.homogeneous_matrix(math.pi))
-        #mat = self.dh_1_2.homogeneous_matrix(2/3*math.pi)
-        #mat = self.dh_0_1.homogeneous_matrix(0)
-        #print(np.matmul(mat, np.array([-75,129,0,1])))
-        print(np.matmul(mat, np.array([0,0,0,1])))
+    def backward(self, transform: Transform) -> List[float]:
 
-    def backward(self, tcp, tcp_n) -> List[float]:
+        tcp = transform.translation
+        tcp_n = transform.z
         
         p_04 = tcp - tcp_n*self.d_6
 
@@ -76,7 +73,8 @@ class Kinematic:
             y_3_0 = (np.matmul(t_0_3, np.array([0,1,0,1])) - np.matmul(t_0_3, np.array([0,0,0,1])))[:3]
             print("y_3_0", y_3_0)
             y_3_0_dot_cross = np.dot(y_3_0, tcp_n_cross_z_3_0)
-            y_3_0_dot_cross /= np.linalg.norm(y_3_0_dot_cross)
+            y_3_0_dot_cross = max(y_3_0_dot_cross, -1)
+            y_3_0_dot_cross = min(y_3_0_dot_cross, 1)
             print("y_3_0_dot_cross:", y_3_0_dot_cross)
             delta_q_4 = math.acos(y_3_0_dot_cross)
             print("delta_q_4:", delta_q_4/2/math.pi*360)
@@ -91,9 +89,8 @@ class Kinematic:
         else:
             pass
 
-        #q_4 = math.pi
         q_6 = 0
 
-        q = [q_1, q_2, q_3, q_4, q_5, q_6] # radian
+        q = [q_1, q_2, q_3, q_4, q_5, q_6] # in radian
         radian_to_degree = lambda rad: rad / 2 / math.pi * 360
         return [deg for deg in map(radian_to_degree, q)]
