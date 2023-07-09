@@ -76,6 +76,7 @@ class Kinematic:
             y_3_0 = (np.matmul(t_0_3, np.array([0,1,0,1])) - np.matmul(t_0_3, np.array([0,0,0,1])))[:3]
             print("y_3_0", y_3_0)
             y_3_0_dot_cross = np.dot(y_3_0, tcp_n_cross_z_3_0)
+            y_3_0_dot_cross /= np.linalg.norm(y_3_0_dot_cross)
             print("y_3_0_dot_cross:", y_3_0_dot_cross)
             delta_q_4 = math.acos(y_3_0_dot_cross)
             print("delta_q_4:", delta_q_4/2/math.pi*360)
