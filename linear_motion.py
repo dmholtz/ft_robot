@@ -2,8 +2,8 @@ import time
 import math
 import numpy as np
 
-from kinematic import Kinematic
-from robot import RobotArm
+from robotic_arm.kinematic import Kinematic
+from robotic_arm.robot import RobotArm
 
 k = Kinematic()
 robot_arm = RobotArm()

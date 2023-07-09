@@ -3,7 +3,7 @@ import math
 
 from typing import List
 
-from denavit_hartenberg import DenavitHartenbergMatrix
+from robotic_arm.denavit_hartenberg import DenavitHartenbergMatrix
 
 class Kinematic:
 

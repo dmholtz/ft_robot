@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from fischertechnik.controller.Motor import Motor
-from constants import SERVO_HOME_PWM
+from robotic_arm.constants import SERVO_HOME_PWM
 
 class MechanicalAxisConfig:
 

@@ -2,8 +2,8 @@ from lib.controller import *
 
 from typing import List
 
-from axis import MechanicalAxisConfig, ServoAxisConfig, RobotAxis, ServoAxis
-from constants import ENCODER_STEPS_PER_REVOLUTION, SERVO_PWM_PER_DEGREE
+from robotic_arm.axis import MechanicalAxisConfig, ServoAxisConfig, RobotAxis, ServoAxis
+from robotic_arm.constants import ENCODER_STEPS_PER_REVOLUTION, SERVO_PWM_PER_DEGREE
 
 class RobotArm:
 
