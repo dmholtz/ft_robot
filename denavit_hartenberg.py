@@ -1,9 +1,12 @@
+from math import sin, cos
+import numpy as np
+
 class DenavitHartenbergMatrix:
     """Transformation matrix to convert coordinate system K_i into coordinate system
     K_j according to the Denavit-Hartenberg convention.
     """
 
-    def __init__(self, d: float, a: float, alpha: float, phi=0: float):
+    def __init__(self, *, d: float, a: float, alpha: float, phi: float = 0):
         """Initialize the Denavit-Hartenberg matrix using the Denavit-Hartenberg
         parameters.
 
@@ -25,10 +28,9 @@ class DenavitHartenbergMatrix:
         """Returns the homogeneous matrix that transforms coordinates of K_j into
         coordinates of K_i.
         """
-
         return np.array([
-            [math.cos(phi), -math.sin(phi)*math.cos(self.alpha), math.sin(phi)*math.sin(self.alpha),    self.a*math.cos(phi)],
-            [math.sin(phi), math.cos(phi)*math.cos(self.alpha), -math.cos(phi)*math.sin(self.alpha),    self.a*math.sin(phi)],
-            [0,             math.sin(self.alpha),               math.cos(self.alpha),                   self.d              ],
-            [0,             0,                                  0,                                      1                   ],
+            [cos(phi),  -sin(phi)*cos(self.alpha),  sin(phi)*sin(self.alpha),   self.a*cos(phi) ],
+            [sin(phi),  cos(phi)*cos(self.alpha),   -cos(phi)*sin(self.alpha),  self.a*sin(phi) ],
+            [0,         sin(self.alpha),            cos(self.alpha),            self.d          ],
+            [0,         0,                          0,                          1               ],
         ])
