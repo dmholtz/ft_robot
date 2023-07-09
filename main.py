@@ -1,8 +1,12 @@
 import time
+import math
+import numpy as np
 
 from typing import List, Tuple
 from fischertechnik.controller.Motor import Motor
 from lib.controller import *
+
+from denavit_hartenberg import DenavitHartenbergMatrix
 
 ENCODER_STEPS_PER_REVOLUTION = 63.3
 SERVO_PWM_PER_DEGREE = 512/180
@@ -133,10 +137,104 @@ class ServoAxis:
     def poll_axis(self):
         return True
 
+dh = DenavitHartenbergMatrix(d=10, a=0, alpha=math.pi/2)
+print(dh.homogeneous_matrix(0))
+
+mat = dh.homogeneous_matrix(0)
+print(np.matmul(mat, np.array([1,0,1,1])))
+
 class Kinematic:
 
+    # lengths (unit: mm)
+    l_1 = 92.5
+    l_2 = 150
+    l_4 = 140
+    l_5 = 67.5
+    l_6 = 33
+
+    # vectors
+    p_01 = np.array([0,0,l_1])
+
     def __init__(self):
-        pass
+        self.d_6 = self.l_5+self.l_6
+
+        # Denavit-Hartenberg matrices
+        self.dh_0_1 = DenavitHartenbergMatrix(d=self.l_1, a=0, alpha=math.pi/2)
+        self.dh_1_2 = DenavitHartenbergMatrix(d=0, a=self.l_2, alpha=0)
+        self.dh_2_3 = DenavitHartenbergMatrix(d=0, a=0, alpha=math.pi/2)
+
+        mat = np.matmul(self.dh_0_1.homogeneous_matrix(0), self.dh_1_2.homogeneous_matrix(2/3*math.pi))
+        mat = np.matmul(mat, self.dh_2_3.homogeneous_matrix(math.pi))
+        #mat = self.dh_1_2.homogeneous_matrix(2/3*math.pi)
+        #mat = self.dh_0_1.homogeneous_matrix(0)
+        #print(np.matmul(mat, np.array([-75,129,0,1])))
+        print(np.matmul(mat, np.array([0,0,0,1])))
+
+    def backward(self, tcp, tcp_n) -> List[float]:
+        
+        p_04 = tcp - tcp_n*self.d_6
+
+        # add pi to reach preferred orientation of second joint 
+        q_1 = math.atan2(p_04[1], p_04[0]) + math.pi
+        print("q_1:", q_1/2/math.pi*360)
+
+        p_14 = p_04 - self.p_01
+        l_14 = np.linalg.norm(p_14)
+
+        q_3_prime = math.acos((self.l_2**2 + self.l_4**2 - l_14**2)/(2*self.l_2*self.l_4))
+        q_3 = 3/2*math.pi - q_3_prime
+        print("q_3:", q_3/2/math.pi*360)
+
+        q_2_prime = math.asin(p_14[2]/l_14)
+        print(q_2_prime/2/math.pi*360)
+        q_2_prime_prime = math.acos((self.l_2**2 + l_14**2 - self.l_4**2)/(2*self.l_2*l_14))
+        print(q_2_prime_prime/2/math.pi*360)
+        q_2 = math.pi - q_2_prime - q_2_prime_prime
+        print("q_2:", q_2/2/math.pi*360)
+
+        #
+        t_0_3 = np.matmul(np.matmul(self.dh_0_1.homogeneous_matrix(q_1), self.dh_1_2.homogeneous_matrix(q_2)), self.dh_2_3.homogeneous_matrix(q_3))
+        z_3_0 = np.matmul(t_0_3, np.array([0,0,1,1])) - np.matmul(t_0_3, np.array([0,0,0,1]))
+        print("z_3_0:", z_3_0)
+
+        z_3_0_dot_tcp_n = np.dot(z_3_0[:3], tcp_n)
+        if z_3_0_dot_tcp_n < 0:
+            q_5_prime = math.acos(z_3_0_dot_tcp_n) - math.pi
+        else:
+            q_5_prime = math.acos(z_3_0_dot_tcp_n)
+        q_5 = q_5_prime + math.pi
+        print("q_5:", q_5/2/math.pi*360)
+
+        # TODO distinguish singular and non-singular case
+        if True:
+            # non-singular case
+            tcp_n_cross_z_3_0 = np.cross(tcp_n, z_3_0[:3])
+            tcp_n_cross_z_3_0 /= np.linalg.norm(tcp_n_cross_z_3_0)
+            print("cross:", tcp_n_cross_z_3_0)
+            y_3_0 = (np.matmul(t_0_3, np.array([0,1,0,1])) - np.matmul(t_0_3, np.array([0,0,0,1])))[:3]
+            print("y_3_0", y_3_0)
+            y_3_0_dot_cross = np.dot(y_3_0, tcp_n_cross_z_3_0)
+            print("y_3_0_dot_cross:", y_3_0_dot_cross)
+            delta_q_4 = math.acos(y_3_0_dot_cross)
+            print("delta_q_4:", delta_q_4/2/math.pi*360)
+
+            # determine direction
+            x_3_0 = (np.matmul(t_0_3, np.array([1,0,0,1])) - np.matmul(t_0_3, np.array([0,0,0,1])))[:3]
+            if np.dot(x_3_0, tcp_n_cross_z_3_0) > 0:
+                q_4 = 2 * math.pi - delta_q_4
+            else:
+                q_4 = delta_q_4
+            print("q_4:", q_4)
+        else:
+            pass
+
+        #q_4 = math.pi
+        q_6 = 0
+
+        q = [q_1, q_2, q_3, q_4, q_5, q_6] # radian
+        radian_to_degree = lambda rad: rad / 2 / math.pi * 360
+        return [deg for deg in map(radian_to_degree, q)]
+
 
 
 class RobotArm:
@@ -158,7 +256,7 @@ class RobotArm:
             TXT_M_M3_encodermotor,
             TXT_M_I3_mini_switch,
             TXT_M_C3_motor_step_counter,
-            MechanicalAxisConfig(ENCODER_STEPS_PER_REVOLUTION, 40/360*1,0),
+            MechanicalAxisConfig(ENCODER_STEPS_PER_REVOLUTION, 40/360*1,90),
         )
         self.axis4 = ServoAxis(
             TXT_M_S1_servomotor,
@@ -180,7 +278,7 @@ class RobotArm:
             axis.blocking_home()  
 
     def home(self):
-        self.pos([90,90,90,180,225,0]) 
+        self.pos([90,90,180,180,225,0]) 
 
     def pos(self, phi: List[float]):
         assert len(phi) == 6
@@ -189,16 +287,32 @@ class RobotArm:
             axis.async_pos(phi_i)
 
         while not all(axis.poll_axis() for axis in self.axes):
-            pass  
+            pass
+
+k = Kinematic()
+
+q = k.backward([-150,-150,60], np.array([-math.sqrt(2)/2,0,-math.sqrt(2)/2]))
+#q = k.backward([-150,-150,60], np.array([0,-math.sqrt(2)/2,-math.sqrt(2)/2]))
+#q = k.backward([-150,-150,60], np.array([0,0,-1]))
+print(q)
+
+#assert False
 
 
 robot_arm = RobotArm()
 robot_arm.reference()
 time.sleep(1)
 robot_arm.home()
+time.sleep(1)
+robot_arm.pos(q)
+assert False
+for i in range(90,-1,-10):
+    q = k.backward([-150,-150,i], np.array([0,0,-1]))
+    robot_arm.pos(q)
+#robot_arm.pos([45, 120, 70, 135, 135, 20])
 time.sleep(2)
-robot_arm.pos([45, 120, 70, 135, 135, 20])
-time.sleep(2)
+
+assert False
 
 for x,y,z in zip(range(95,265), range(95,265), range(-85,85)):
     for i in range(4):
