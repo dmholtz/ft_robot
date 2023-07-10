@@ -15,7 +15,7 @@ time.sleep(1)
 robot_arm.home()
 time.sleep(1)
 
-for i in range(90,-1,-10):
-    tf = Transform().rotate_x(math.pi).translate([-150, -150, i])
+for i in range(-60,-150,-10):
+    tf = Transform().rotate_x(math.pi).translate([-150, i, 60])
     q = k.backward(tf)
     robot_arm.pos(q)
