@@ -4,6 +4,8 @@ from typing import List
 
 from robotic_arm.axis import MechanicalAxisConfig, ServoAxisConfig, RobotAxis, ServoAxis
 from robotic_arm.constants import ENCODER_STEPS_PER_REVOLUTION, SERVO_PWM_PER_DEGREE
+from robotic_arm.kinematic import Kinematic
+from robotic_arm.transform import Transform
 
 class AxesConfig:
 
@@ -39,8 +41,10 @@ class AxesConfig:
 
 class RobotArm:
 
-    def __init__(self, axes_config: AxesConfig):
+    def __init__(self, axes_config: AxesConfig, kinematic: Kinematic):
         self.config = axes_config
+        self.kinematic = kinematic
+
         self.axis1 = RobotAxis(
             TXT_M_M1_encodermotor, 
             TXT_M_I1_mini_switch, 
@@ -75,8 +79,9 @@ class RobotArm:
         self.axes = [self.axis1, self.axis2, self.axis3, self.axis4, self.axis5, self.axis6]
 
     def reference(self):
-        for axis in self.axes:
-            axis.blocking_home()  
+        for axis in self.axes[1:]:
+            axis.blocking_home()
+        self.axis1.blocking_home()
 
     def home(self):
         self.pos([0,90,180,180,225,0]) 
@@ -89,3 +94,12 @@ class RobotArm:
 
         while not all(axis.poll_axis() for axis in self.axes):
             pass
+        
+    def pos_cartesian(self, transform: Transform):
+        q = None
+        try:
+            q = self.kinematic.backward(transform)
+        except:
+            print("Error: TCP is not reachable.")
+        if q:
+            self.pos(q)
