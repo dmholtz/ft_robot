@@ -6,12 +6,9 @@ kinematic:
   l_2: 150
   l_4: 140
   l_5: 67.5
-
-  # vacuum gripper
-  l_6: 33
-
-  # gripper
-  # l_6: ?
+  
+  l_6: 33 # vacuum gripper
+  # l_6: ? # gripper
 
 axes:
   axis1:
