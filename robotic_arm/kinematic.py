@@ -6,24 +6,29 @@ from typing import List
 from robotic_arm.denavit_hartenberg import DenavitHartenbergMatrix
 from robotic_arm.transform import Transform
 
-class Kinematic:
+class KinematicConfig:
 
-    # lengths (unit: mm)
-    l_1 = 92.5
-    l_2 = 150
-    l_4 = 140
-    l_5 = 67.5
-    l_6 = 33
+    def __init__(self, *, l_1: float, l_2: float, l_4: float, l_5: float, l_6: float):
+        self.l_1 = l_1
+        self.l_2 = l_2
+        self.l_4 = l_4
+        self.l_5 = l_5
+        self.l_6 = l_6
 
-    # vectors
-    p_01 = np.array([0,0,l_1])
+class Kinematic:    
 
-    def __init__(self):
-        self.d_6 = self.l_5+self.l_6
+    def __init__(self, kinematic_config: KinematicConfig):
+        self.config = kinematic_config
+
+        # vectors
+        self.p_01 = np.array([0,0,self.config.l_1])
+
+        # distances
+        self.d_6 = self.config.l_5+self.config.l_6
 
         # Denavit-Hartenberg matrices
-        self.dh_0_1 = DenavitHartenbergMatrix(d=self.l_1, a=0, alpha=math.pi/2)
-        self.dh_1_2 = DenavitHartenbergMatrix(d=0, a=self.l_2, alpha=0)
+        self.dh_0_1 = DenavitHartenbergMatrix(d=self.config.l_1, a=0, alpha=math.pi/2)
+        self.dh_1_2 = DenavitHartenbergMatrix(d=0, a=self.config.l_2, alpha=0)
         self.dh_2_3 = DenavitHartenbergMatrix(d=0, a=0, alpha=math.pi/2)
 
     def backward(self, transform: Transform) -> List[float]:
@@ -40,13 +45,13 @@ class Kinematic:
         p_14 = p_04 - self.p_01
         l_14 = np.linalg.norm(p_14)
 
-        q_3_prime = math.acos((self.l_2**2 + self.l_4**2 - l_14**2)/(2*self.l_2*self.l_4))
+        q_3_prime = math.acos((self.config.l_2**2 + self.config.l_4**2 - l_14**2)/(2*self.config.l_2*self.config.l_4))
         q_3 = 3/2*math.pi - q_3_prime
         print("q_3:", q_3/2/math.pi*360)
 
         q_2_prime = math.asin(p_14[2]/l_14)
         print(q_2_prime/2/math.pi*360)
-        q_2_prime_prime = math.acos((self.l_2**2 + l_14**2 - self.l_4**2)/(2*self.l_2*l_14))
+        q_2_prime_prime = math.acos((self.config.l_2**2 + l_14**2 - self.config.l_4**2)/(2*self.config.l_2*l_14))
         print(q_2_prime_prime/2/math.pi*360)
         q_2 = math.pi - q_2_prime - q_2_prime_prime
         print("q_2:", q_2/2/math.pi*360)

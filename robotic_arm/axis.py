@@ -5,7 +5,7 @@ from robotic_arm.constants import SERVO_HOME_PWM
 
 class MechanicalAxisConfig:
 
-    def __init__(self, steps_per_revolution, revolution_per_degree, degree_offset):
+    def __init__(self, steps_per_revolution, revolution_per_degree, *, degree_offset):
         self.steps_per_revolution = steps_per_revolution # encoder steps per motor revolution
         self.revolution_per_degree = revolution_per_degree # motor revolutions per degree
         self.degree_offset = degree_offset # degree at reference position
