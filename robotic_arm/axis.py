@@ -5,10 +5,17 @@ from robotic_arm.constants import SERVO_HOME_PWM
 
 class MechanicalAxisConfig:
 
-    def __init__(self, steps_per_revolution, revolution_per_degree, *, degree_offset):
+    def __init__(self,
+        steps_per_revolution,
+        revolution_per_degree,
+        *,
+        degree_offset: float, # axis angle offset at reference position
+        invert_direction: bool = False # by convention, CCW motor rotation increments axis angle theta
+    ):
         self.steps_per_revolution = steps_per_revolution # encoder steps per motor revolution
         self.revolution_per_degree = revolution_per_degree # motor revolutions per degree
         self.degree_offset = degree_offset # degree at reference position
+        self.invert_direction = invert_direction
 
     def delta_degree_to_steps(self, degree) -> int:
         return int(degree * self.revolution_per_degree * self.steps_per_revolution)
@@ -59,10 +66,17 @@ class RobotAxis:
         """Compute (steps, direction) pair to reach given target"""
 
         delta_degree = abs(target - self.pos)
-        if target >= self.pos:
-            direction = Motor.CW
+        if target < self.pos:
+            if self.mechanical_axis_config.invert_direction:
+                direction = Motor.CCW
+            else:
+                direction = Motor.CW
         else:
-            direction = Motor.CCW
+            if self.mechanical_axis_config.invert_direction:
+                direction = Motor.CW
+            else:
+                direction = Motor.CCW
+
         steps = self.mechanical_axis_config.delta_degree_to_steps(delta_degree)
         return steps, direction
 

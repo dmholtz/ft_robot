@@ -79,12 +79,12 @@ class RobotArm:
         self.axes = [self.axis1, self.axis2, self.axis3, self.axis4, self.axis5, self.axis6]
 
     def reference(self):
-        for axis in self.axes[1:]:
+        axis_order = [self.axis2, self.axis4, self.axis5, self.axis6, self.axis3, self.axis1]
+        for axis in axis_order:
             axis.blocking_home()
-        self.axis1.blocking_home()
 
     def home(self):
-        self.pos([0,90,180,180,225,0]) 
+        self.pos([0,100,210,180,180,0])
 
     def pos(self, phi: List[float]):
         assert len(phi) == 6

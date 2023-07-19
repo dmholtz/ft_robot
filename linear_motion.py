@@ -22,8 +22,15 @@ time.sleep(1)
 robot_arm.home()
 time.sleep(1)
 
-for i in range(-60,-150,-10):
+for i in range(-150,-10,10):
     tf = Transform().rotate_x(math.pi).translate([-150, i, 60])
     robot_arm.pos_cartesian(tf)
 
-robot_arm.pos_cartesian(Transform().translate([1000, 1000, 1000]))
+for i in range(-10,-150,-10):
+    tf = Transform().rotate_x(math.pi).translate([-150, i, 60])
+    robot_arm.pos_cartesian(tf)
+
+#robot_arm.pos_cartesian(Transform().translate([1000, 1000, 1000]))
+
+time.sleep(1)
+robot_arm.home()
