@@ -1,3 +1,4 @@
+import time
 from typing import Tuple
 
 from fischertechnik.controller.Motor import Motor
@@ -44,6 +45,9 @@ class RobotAxis:
         self.pos = None
         self._target = None
         self.is_running = False
+        self.count = None
+        self.count_last = None
+        self.count_diff = None
 
     def async_home(self):
         pass
@@ -82,11 +86,26 @@ class RobotAxis:
 
 
     def blocking_home(self):
+        #move ref fast
         while self.limit_switch.is_open():
-            self.motor.set_speed(int(384), Motor.CCW)
+            self.motor.set_speed(int(512), Motor.CCW)
+            self.motor.start_sync()
+        self.motor.stop_sync()
+        #ref revert const distance
+        self.motor.set_speed(int(512), Motor.CW)
+        self.motor.set_distance(30) #const steps
+        while self.motor.is_running():
+            pass
+        #ref slow
+        while self.limit_switch.is_open():
+            self.motor.set_speed(int(200), Motor.CCW)
             self.motor.start_sync()
         self.motor.stop_sync()
         self.pos = self.mechanical_axis_config.degree_offset
+        time.sleep(0.01)
+        self.count_last = self.counter.get_count()
+        self.count_diff = 0
+        #print("home pos: ", self.pos)
 
     def blocking_pos(self, degree):
         assert self.pos is not None
@@ -98,6 +117,7 @@ class RobotAxis:
             pass
         
         self.pos = degree
+        #print("blocking pos: ", steps, self.pos)
 
     def async_pos(self, degree):
         assert self.pos is not None
@@ -105,7 +125,9 @@ class RobotAxis:
         steps, direction = self._compute_motion(degree) 
         self.motor.set_speed(512, direction)
         self.motor.set_distance(steps)
+        self.count = steps
         self._target = degree 
+        #print("async_pos ", self._target)
 
     def poll_axis(self) -> bool:
         assert self._target is not None
@@ -113,6 +135,10 @@ class RobotAxis:
             return False
         else:
             self.pos = self._target
+            #time.sleep(0.01)
+            self.count_last = self.counter.get_count()
+            self.count_diff = self.count_last - self.count
+            #print("poll_axis (diff, steps, last) ", self.count_diff, self.count, self.count_last)
             return True 
 
 
