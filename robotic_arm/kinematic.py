@@ -31,6 +31,32 @@ class Kinematic:
         self.dh_1_2 = DenavitHartenbergMatrix(d=0, a=self.config.l_2, alpha=0)
         self.dh_2_3 = DenavitHartenbergMatrix(d=0, a=0, alpha=math.pi/2)
         self.dh_3_4 = DenavitHartenbergMatrix(d=self.config.l_4, a=0, alpha=math.pi/2)
+        self.dh_4_5 = DenavitHartenbergMatrix(d=0, a=0, alpha=math.pi/2)
+        self.dh_5_6 = DenavitHartenbergMatrix(d=self.d_6, a=0, alpha=0)
+        self.dh_matrices = [
+            self.dh_0_1,
+            self.dh_1_2,
+            self.dh_2_3,
+            self.dh_3_4,
+            self.dh_4_5,
+            self.dh_5_6,
+        ]
+
+    def forward(self, q_deg: List[float]) -> Transform:
+        """Compute the forward kinematic given a list of six angles in degree.
+        """
+
+        assert len(q_deg) == 6, "len(q_deg) should be 6"
+
+        deg_to_rad = lambda deg: deg/360*2*math.pi
+        q_rad = [deg_to_rad(q_i) for q_i in q_deg]        
+
+        homogeneous_matrix = np.eye(4)
+        for dh_matrix, q_i in zip(self.dh_matrices, q_rad):
+            homogeneous_matrix = np.matmul(homogeneous_matrix, dh_matrix.homogeneous_matrix(q_i))
+
+        return Transform(homogeneous_matrix)
+
 
     def backward(self, transform: Transform) -> List[float]:
 
