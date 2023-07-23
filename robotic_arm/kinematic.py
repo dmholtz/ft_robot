@@ -30,6 +30,7 @@ class Kinematic:
         self.dh_0_1 = DenavitHartenbergMatrix(d=self.config.l_1, a=0, alpha=math.pi/2)
         self.dh_1_2 = DenavitHartenbergMatrix(d=0, a=self.config.l_2, alpha=0)
         self.dh_2_3 = DenavitHartenbergMatrix(d=0, a=0, alpha=math.pi/2)
+        self.dh_3_4 = DenavitHartenbergMatrix(d=self.config.l_4, a=0, alpha=math.pi/2)
 
     def backward(self, transform: Transform) -> List[float]:
 
@@ -61,14 +62,6 @@ class Kinematic:
         z_3_0 = np.matmul(t_0_3, np.array([0,0,1,1])) - np.matmul(t_0_3, np.array([0,0,0,1]))
         print("z_3_0:", z_3_0)
 
-        z_3_0_dot_tcp_n = np.dot(z_3_0[:3], tcp_n)
-        if z_3_0_dot_tcp_n < 0:
-            q_5_prime = math.acos(z_3_0_dot_tcp_n) - math.pi
-        else:
-            q_5_prime = math.acos(z_3_0_dot_tcp_n)
-        q_5 = q_5_prime + math.pi
-        print("q_5:", q_5/2/math.pi*360)
-
         # TODO distinguish singular and non-singular case
         if True:
             # non-singular case
@@ -90,9 +83,28 @@ class Kinematic:
                 q_4 = 2 * math.pi - delta_q_4
             else:
                 q_4 = delta_q_4
-            print("q_4:", q_4)
+            print("q_4:", q_4/2/math.pi*360)
         else:
             pass
+
+        t_0_4 = np.matmul(t_0_3, self.dh_3_4.homogeneous_matrix(q_4))
+        # calculate x_4 in world coordinate system
+        x_4_0 = np.matmul(t_0_4, np.array([1,0,0,1])) - np.matmul(t_0_4, np.array([0,0,0,1]))
+        print("x_4_0", x_4_0)
+
+        # calculate the relevant inner products
+        x_4_0_dot_tcp_n = np.dot(x_4_0[:3], tcp_n)
+        z_3_0_dot_tcp_n = np.dot(z_3_0[:3], tcp_n)
+
+        # distinguish two cases to compute q_5
+        if x_4_0_dot_tcp_n < 0:
+            # tcp_n is "below" z_3
+            q_5_prime = math.acos(z_3_0_dot_tcp_n)
+        else:
+            # tcp_n is "above" z_3
+            q_5_prime = -math.acos(z_3_0_dot_tcp_n)
+        q_5 = q_5_prime + math.pi
+        print("q_5:", q_5/2/math.pi*360)
 
         q_6 = 0
 
