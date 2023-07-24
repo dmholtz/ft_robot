@@ -33,7 +33,7 @@ Experiment
 2. Robot heads to the compensated point (-158, -191, 25) from the first experiment.
 3. Error at compensated point is measured (by hand).
 
-- Error at final, compensated point (step-size=2mm): (-27, +3, -25)
+- Error at final, compensated point (step-size=1mm): (-27, +3, -25)
 - Error at final, compensated point (step-size=2mm): (-12, +8, -20)
 - Error at final, compensated point (step-size=4mm): (-5, +2, -15)
 - Error at final, compensated point (step-size=8mm): (+5, +0, -5)
