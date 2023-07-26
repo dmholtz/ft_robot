@@ -1,3 +1,5 @@
+import logging
+
 from lib.controller import *
 
 from typing import List
@@ -87,6 +89,7 @@ class RobotArm:
         self.pos([0,100,210,180,180,0])
 
     def pos(self, phi: List[float]):
+        logging.debug("--- pos start {p}".format(p=phi))
         assert len(phi) == 6
 
         for axis, phi_i in zip(self.axes, phi):
@@ -94,6 +97,7 @@ class RobotArm:
 
         while not all(axis.poll_axis() for axis in self.axes):
             pass
+        logging.debug("--- pos end")
         
     def pos_cartesian(self, transform: Transform):
         q = None

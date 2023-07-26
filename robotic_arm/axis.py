@@ -1,5 +1,6 @@
 import time
 from typing import Tuple
+import logging
 
 from fischertechnik.controller.Motor import Motor
 from robotic_arm.constants import SERVO_HOME_PWM
@@ -20,6 +21,9 @@ class MechanicalAxisConfig:
 
     def delta_degree_to_steps(self, degree) -> int:
         return int(degree * self.revolution_per_degree * self.steps_per_revolution)
+
+    def delta_steps_to_degree(self, steps) -> float:
+        return float(steps / self.revolution_per_degree / self.steps_per_revolution)
 
 class ServoAxisConfig:
 
@@ -46,8 +50,6 @@ class RobotAxis:
         self._target = None
         self.is_running = False
         self.count = None
-        self.count_last = None
-        self.count_diff = None
 
     def async_home(self):
         pass
@@ -82,6 +84,10 @@ class RobotAxis:
                 direction = Motor.CCW
 
         steps = self.mechanical_axis_config.delta_degree_to_steps(delta_degree)
+
+        self.count = self.counter.get_count()
+        logging.debug("_compute_motion steps:{s} {d} count:{c} ({dd})".format(s=steps, d=direction, c=self.count, dd=delta_degree))
+
         return steps, direction
 
 
@@ -95,17 +101,17 @@ class RobotAxis:
         self.motor.set_speed(int(512), Motor.CW)
         self.motor.set_distance(30) #const steps
         while self.motor.is_running():
-            pass
+            time.sleep(0.010)
         #ref slow
         while self.limit_switch.is_open():
             self.motor.set_speed(int(200), Motor.CCW)
             self.motor.start_sync()
         self.motor.stop_sync()
+        time.sleep(0.010)
         self.pos = self.mechanical_axis_config.degree_offset
-        time.sleep(0.01)
-        self.count_last = self.counter.get_count()
-        self.count_diff = 0
-        #print("home pos: ", self.pos)
+        
+        self.count = self.counter.get_count()
+        logging.debug("home pos {p} count:{c}".format(p=self.pos, c=self.count, ))
 
     def blocking_pos(self, degree):
         assert self.pos is not None
@@ -114,32 +120,41 @@ class RobotAxis:
         self.motor.set_speed(512, direction)
         self.motor.set_distance(steps)
         while self.motor.is_running():
-            pass
+            time.sleep(0.010)
         
         self.pos = degree
-        #print("blocking pos: ", steps, self.pos)
+
+        self.count = self.counter.get_count()
+        logging.debug("blocking pos steps:{s} {d} count:{c} ({p})".format(s=steps, d=direction, c=self.count, p=degree))
 
     def async_pos(self, degree):
         assert self.pos is not None
 
-        steps, direction = self._compute_motion(degree) 
+        steps, direction = self._compute_motion(degree)
         self.motor.set_speed(512, direction)
         self.motor.set_distance(steps)
-        self.count = steps
-        self._target = degree 
-        #print("async_pos ", self._target)
+        self._target = degree
+        
+        self.count = self.counter.get_count()
+        logging.debug("async_pos steps:{s} {d} count:{c} ({t})".format(s=steps, d=direction, c=self.count, t=self._target))
 
     def poll_axis(self) -> bool:
         assert self._target is not None
+        
+        time.sleep(0.010)
+
         if self.motor.is_running():
             return False
         else:
             self.pos = self._target
-            #time.sleep(0.01)
-            self.count_last = self.counter.get_count()
-            self.count_diff = self.count_last - self.count
-            #print("poll_axis (diff, steps, last) ", self.count_diff, self.count, self.count_last)
+            
+            self.count = self.counter.get_count()
+            #steps = self.mechanical_axis_config.delta_degree_to_steps(self._target)
+            #delta_degree = self.mechanical_axis_config.delta_steps_to_degree(self.count)
+
+            logging.debug("poll_axis count:{c} target:{t}".format(c=self.count, t=self._target))
             return True 
+
 
 
 class ServoAxis:
@@ -157,8 +172,21 @@ class ServoAxis:
     def blocking_pos(self, degree):
         assert self.pos is not None
 
+        pwm0 = self.servo.get_position()
         pwm = self.servo_axis_config.degree_to_pwm(degree)
-        self.servo.set_position(pwm)
+        if pwm==pwm0:
+            self.servo.set_position(pwm)
+            #print("servo: ", pwm)
+        elif pwm0 < pwm:
+            for i in range(pwm0, pwm, 1):
+                self.servo.set_position(i)
+                #print("servo: ", i)
+                time.sleep(0.005)
+        elif pwm0 > pwm:
+            for i in range(pwm0, pwm, -1):
+                self.servo.set_position(i)
+                #print("servo: ", i)
+                time.sleep(0.005)
         
         self.pos = degree
 
