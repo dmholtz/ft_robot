@@ -15,6 +15,12 @@ Definitions:
 | (-82.5, -202.5, 10)  | (-82, -211, 2)  | (-86, -191, 23)  | (±1, ±1, ±1) |
 | (-157.5, -202.5, 10) | ()              | (-158, -191, 25) | (±2, ±2, ±1) |
 
+After Recalibration
+
+| Expected            | Actual | Compensated     | Variance     |
+| ------------------- | ------ | --------------- | ------------ |
+| (-82.5, -202.5, 10) |        | (-90, -197, 23) | (±1, ±1, ±1) |
+
 ## Repetition Accuracy
 
 Experiment
@@ -37,3 +43,6 @@ Error at final, compensated point (step-size=2mm): (-27, +3, -25)
 Error at final, compensated point (step-size=2mm): (-12, +8, -20)
 Error at final, compensated point (step-size=4mm): (-5, +2, -15)
 Error at final, compensated point (step-size=8mm): (+5, +0, -5)
+
+With reduced speed (300):
+Error at final, compensated point (step-size=8mm): (-1, -5, -7)
