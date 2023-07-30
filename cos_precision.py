@@ -24,7 +24,7 @@ time.sleep(1)
 
 robot_arm.pos_cartesian(Transform().rotate_x(math.pi).translate([-82.5, -202.5, 60]))
 time.sleep(0.5)
-robot_arm.pos_cartesian(Transform().rotate_x(math.pi).translate([-86, -191, 23]))
+robot_arm.pos_cartesian(Transform().rotate_x(math.pi).translate([-90, -197, 23]))
 
 
 time.sleep(1)

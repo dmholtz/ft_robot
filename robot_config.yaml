@@ -12,13 +12,13 @@ kinematic:
 
 axes:
   axis1:
-    degree_offset: 0
+    degree_offset: 0.9
     invert_direction: true
   axis2:
-    degree_offset: 64.9
+    degree_offset: 66.8
     invert_direction: true
   axis3:
-    degree_offset: 247.1
+    degree_offset: 244.3
     invert_direction: false
   axis4:
     degree_offset: 87.4

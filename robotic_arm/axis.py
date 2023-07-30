@@ -1,4 +1,6 @@
 from typing import Tuple
+import logging
+import time
 
 from fischertechnik.controller.Motor import Motor
 from robotic_arm.constants import SERVO_HOME_PWM
@@ -78,10 +80,39 @@ class RobotAxis:
                 direction = Motor.CCW
 
         steps = self.mechanical_axis_config.delta_degree_to_steps(delta_degree)
+
+        self.count = self.counter.get_count()
+        logging.debug("_compute_motion steps:{s} {d} count:{c} delta_degree:{dd}={dd1} - {dd2}".format(s=steps, d=direction, c=self.count, dd=delta_degree, dd1=target, dd2=self.pos))
+
         return steps, direction
 
 
     def blocking_home(self):
+        #move ref fast
+        while self.limit_switch.is_open():
+            self.motor.set_speed(int(512), Motor.CCW)
+            self.motor.start_sync()
+            time.sleep(0.010)
+        self.motor.stop_sync()
+        #ref revert const distance
+        self.motor.set_speed(int(512), Motor.CW)
+        self.motor.set_distance(30) #const steps
+        while self.motor.is_running():
+            time.sleep(0.010)
+        #ref slow
+        while self.limit_switch.is_open():
+            self.motor.set_speed(int(200), Motor.CCW)
+            self.motor.start_sync()
+            time.sleep(0.010)
+        self.motor.stop_sync()
+        time.sleep(0.010)
+        self.pos = self.mechanical_axis_config.degree_offset
+        
+        self.count = self.counter.get_count()
+        logging.debug("home pos {p} count:{c}".format(p=self.pos, c=self.count, ))
+        
+
+
         while self.limit_switch.is_open():
             self.motor.set_speed(int(384), Motor.CCW)
             self.motor.start_sync()
@@ -99,20 +130,28 @@ class RobotAxis:
         
         self.pos = degree
 
+        self.count = self.counter.get_count()
+        logging.debug("blocking pos steps:{s} {d} count:{c} pos:{p}".format(s=steps, d=direction, c=self.count, p=degree))
+
     def async_pos(self, degree):
         assert self.pos is not None
 
         steps, direction = self._compute_motion(degree) 
         self.motor.set_speed(512, direction)
         self.motor.set_distance(steps)
-        self._target = degree 
+        self._target = degree
+
+        self.count = self.counter.get_count()
+        logging.debug("async_pos steps:{s} {d} count:{c} target:{t}".format(s=steps, d=direction, c=self.count, t=self._target))
 
     def poll_axis(self) -> bool:
         assert self._target is not None
         if self.motor.is_running():
             return False
         else:
-            self.pos = self._target
+            self.pos = self._target        
+            self.count = self.counter.get_count()
+            logging.debug("poll_axis count:{c} target:{t}".format(c=self.count, t=self._target))
             return True 
 
 

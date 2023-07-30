@@ -45,4 +45,4 @@ for i in range(1):
     time.sleep(1)
 
 # final position
-robot_arm.pos_cartesian(Transform().rotate_x(math.pi).translate([-158, -191, 25]))
+robot_arm.pos_cartesian(Transform().rotate_x(math.pi).translate([-90, -197, 23]))
