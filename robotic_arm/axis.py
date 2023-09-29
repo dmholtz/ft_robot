@@ -1,6 +1,6 @@
-import time
 from typing import Tuple
 import logging
+import time
 
 from fischertechnik.controller.Motor import Motor
 from robotic_arm.constants import SERVO_HOME_PWM
@@ -136,7 +136,7 @@ class RobotAxis:
         self.motor.set_speed(512, direction)
         self.motor.set_distance(steps)
         self._target = degree
-        
+
         self.count = self.counter.get_count()
         logging.debug("async_pos steps:{s} {d} count:{c} target:{t}".format(s=steps, d=direction, c=self.count, t=self._target))
 
@@ -156,7 +156,6 @@ class RobotAxis:
 
             logging.debug("poll_axis count:{c} target:{t}".format(c=self.count, t=self._target))
             return True 
-
 
 
 class ServoAxis:
